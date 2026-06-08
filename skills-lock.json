@@ -6,6 +6,24 @@
       "sourceType": "github",
       "skillPath": "SKILL.md",
       "computedHash": "d7bb1e866abf4f40544943e522baedf9a12664066d9699b3262e6b77df5d6057"
+    },
+    "dashboard-crud-page": {
+      "source": "skills(agregar-skills).zip",
+      "sourceType": "zip",
+      "skillPath": "SKILL.md",
+      "computedHash": "866127c6fd537fef9f51a1ec248d9993d63201a47c95dbe6072c7bac69d590f0"
+    },
+    "help-system-content": {
+      "source": "skills(agregar-skills).zip",
+      "sourceType": "zip",
+      "skillPath": "SKILL.md",
+      "computedHash": "ec9437a23e491c7f134dd2bdce4455a08dfc7995094150716ff5e8a13560b716"
+    },
+    "tailwind-design-system": {
+      "source": "skills(agregar-skills).zip",
+      "sourceType": "zip",
+      "skillPath": "SKILL.md",
+      "computedHash": "8d25209a0f910b45d6f6bef88b6281adf57fa1376a5a423e316de7214985f42c"
     }
   }
 }

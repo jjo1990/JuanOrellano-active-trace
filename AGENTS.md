@@ -80,12 +80,12 @@ Cargá la skill correspondiente al contexto **ANTES** de escribir código. Aplic
 |--------|-----|------------------|
 | **Backend Core** | FastAPI / SQLAlchemy / migraciones / modelos | `fastapi-templates`, `postgresql-table-design`, `python-testing-patterns`, `test-driven-development` |
 | **Backend Aux** | Servicios, integraciones, seguridad, performance | `api-security-best-practices`, `postgresql-optimization`, `systematic-debugging` |
-| **Frontend** | React / TanStack / Tailwind / E2E | `typescript-advanced-types`, `tailwind-design-system`, `playwright-best-practices` |
+| **Frontend** | React / TanStack / Tailwind / E2E | `typescript-advanced-types`, `tailwind-design-system`, `dashboard-crud-page`, `help-system-content`, `playwright-best-practices` |
 | **DevOps** | Contenedores / build | `multi-stage-dockerfile` |
 | **Transversal** | Calidad / revisión | `code-review-excellence`, `systematic-debugging` |
 | **Orquestación** | SDD / OPSX / docs | `kb-creator`, `roadmap-generator`, `agent-instruction`, `find-skill` |
 
-> **Gap conocido**: no hay skill de buenas prácticas React instalada (`vercel-react-best-practices` recomendada pero NO instalada por decisión del usuario). El stack queda cubierto ~100% por las skills preinstaladas.
+> **Gap conocido**: no hay skill de buenas prácticas React instalada (`vercel-react-best-practices` recomendada pero NO instalada por decisión del usuario). El stack queda cubierto ~100% por las skills preinstaladas. Las skills `dashboard-crud-page` y `help-system-content` se agregaron desde el zip de skills.
 
 ---
 

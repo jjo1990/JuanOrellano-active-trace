@@ -6,6 +6,13 @@
 # PDF generado (es regenerable; descomentar si NO querés versionarlo)
 # activia-trace-documentacion.pdf
 
+# Environment secrets
+.env
+
+# Python bytecode
+__pycache__/
+*.pyc
+
 # OS / IDE
 Thumbs.db
 .DS_Store
