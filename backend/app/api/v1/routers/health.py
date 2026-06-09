@@ -12,7 +12,7 @@ async def health_check(db: AsyncSession = Depends(get_db)):
     db_status = "up"
     try:
         result = await db.execute(text("SELECT 1"))
-        await result.fetchone()
+        result.fetchone()
     except Exception:
         db_status = "down"
 

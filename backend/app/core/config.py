@@ -13,6 +13,9 @@ class Settings(BaseSettings):
     secret_key: str = Field(min_length=32)
     encryption_key: str = Field(min_length=32, max_length=32)
     access_token_expire_minutes: int = Field(default=15, ge=1)
+    refresh_token_expire_days: int = Field(default=7, ge=1)
+    jwt_algorithm: str = Field(default="HS256")
+    totp_issuer: str = Field(default="activia-trace")
     otel_service_name: str = "activia-trace"
     otel_exporter_otlp_endpoint: str | None = None
 

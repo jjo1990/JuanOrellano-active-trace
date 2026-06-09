@@ -108,7 +108,8 @@ class TestRepositoryUpdate:
         entity = await repo_a.create(StubEntity(name="de-A"))
 
         repo_b = Repository[StubEntity](db_session, tenant_b.id, StubEntity)
-        entity.tenant_id = tenant_b.id
+        # NO modificamos tenant_id — el entity original tiene tenant_a.id
+        # repo_b debe rechazar porque entity.tenant_id != repo_b._tenant_id
         entity.name = "hackeado"
         with pytest.raises(RepositoryError):
             await repo_b.update(entity)

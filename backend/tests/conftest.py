@@ -1,4 +1,3 @@
-import asyncio
 import uuid
 
 import pytest
@@ -51,19 +50,12 @@ def pytest_collection_modifyitems(config, items):
             item.add_marker(pytest.mark.skip(reason="PostgreSQL no disponible — saltando test que requiere DB real"))
 
 
-@pytest.fixture(scope="session")
-def event_loop():
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    yield loop
-    loop.close()
-
-
-@pytest.fixture(scope="session")
+@pytest.fixture
 async def test_engine():
     settings = Settings()
     engine = create_engine(settings.database_url)
     async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)
     yield engine
     async with engine.begin() as conn:
