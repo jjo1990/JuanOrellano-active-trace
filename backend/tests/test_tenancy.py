@@ -51,11 +51,11 @@ class TestMultiTenantIsolation:
 
         await repo_a.soft_delete(entity_a.id)
 
-        with pytest.raises(RepositoryError):
-            await repo_b.soft_delete(entity_b.id)
+        # Soft-delete de entidad propia de tenant_b debe funcionar
+        await repo_b.soft_delete(entity_b.id)
 
         deleted_check_b = await repo_b.get(entity_b.id)
-        assert deleted_check_b is not None
+        assert deleted_check_b is None
 
     async def test_list_with_filters_and_soft_delete_combined(
         self, db_session, tenant_a,
@@ -89,4 +89,5 @@ class TestTimestamps:
 
         entity.name = "despues"
         updated = await repo.update(entity)
+        await db_session.refresh(updated)  # recarga atributos expirados por flush
         assert updated.updated_at >= original_updated

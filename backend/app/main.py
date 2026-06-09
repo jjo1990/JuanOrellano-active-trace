@@ -3,9 +3,11 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
+from app.api.v1.routers.auth import router as auth_router
 from app.api.v1.routers.health import router as health_router
 from app.core.config import Settings
 from app.core.database import create_engine, create_session_factory
+from app.core.error_handlers import HANDLERS
 from app.core.logging import setup_logging
 from app.core.observability import instrument_fastapi, setup_otel
 
@@ -28,6 +30,9 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
 def create_app() -> FastAPI:
     app = FastAPI(title="activia-trace", version="0.1.0", lifespan=lifespan)
+    for exc_type, handler in HANDLERS:
+        app.add_exception_handler(exc_type, handler)
+    app.include_router(auth_router)
     app.include_router(health_router)
     instrument_fastapi(app)
     return app

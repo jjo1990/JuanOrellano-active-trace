@@ -1,41 +1,67 @@
 from collections.abc import AsyncGenerator
 from uuid import UUID
 
-from fastapi import Request
+from fastapi import Depends, Header, HTTPException, Request
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import create_session_factory
+from app.core.exceptions import TokenExpiredError, TokenInvalidError
+from app.core.security import verify_access_token
+from app.schemas.auth import UserInfo
+
+_security_scheme = HTTPBearer()
 
 
 async def get_db(request: Request) -> AsyncGenerator[AsyncSession, None]:
-    """Dependency: yields a dedicated async session for the request.
-
-    Session is automatically closed when the request finishes or
-    when an exception propagates out of the handler.
-    """
     session_factory = request.app.state.session_factory
     async with session_factory() as session:
         yield session
 
 
-def get_tenant(request: Request) -> UUID:
-    """Resuelve tenant_id desde el contexto de la request.
+def get_tenant_from_header(
+    x_tenant_id: str | None = Header(default=None, alias="X-Tenant-ID"),
+) -> UUID:
+    if x_tenant_id is None:
+        raise HTTPException(
+            status_code=400,
+            detail="X-Tenant-ID header es requerido para determinar el tenant.",
+        )
+    try:
+        return UUID(x_tenant_id)
+    except ValueError as exc:
+        msg = "X-Tenant-ID debe ser un UUID válido."
+        raise HTTPException(status_code=400, detail=msg) from exc
 
-    En desarrollo lee X-Tenant-ID header. En producción (C-03) se
-    reemplazará por extracción del JWT verificado.
-    """
-    tenant_id_str = request.headers.get("X-Tenant-ID")
-    if tenant_id_str:
-        return UUID(tenant_id_str)
 
-    from app.core.exceptions import TenantNotFoundError
+async def get_current_user(
+    credentials: HTTPAuthorizationCredentials = Depends(_security_scheme),
+) -> UserInfo:
+    token = credentials.credentials
+    try:
+        payload = verify_access_token(token)
+    except TokenExpiredError as exc:
+        raise HTTPException(status_code=401, detail="Token expirado.") from exc
+    except TokenInvalidError as exc:
+        raise HTTPException(status_code=401, detail="Token inválido.") from exc
 
-    raise TenantNotFoundError(
-        "No tenant context. Set X-Tenant-ID header (development) "
-        "or wait for C-03 JWT resolution."
+    sub = payload.get("sub")
+    tenant_id = payload.get("tenant_id")
+    roles = payload.get("roles", [])
+
+    if sub is None or tenant_id is None:
+        raise HTTPException(status_code=401, detail="Token sin claims requeridos.")
+
+    return UserInfo(
+        id=UUID(sub),
+        tenant_id=UUID(tenant_id),
+        email="",
+        display_name="",
+        roles=roles,
     )
 
 
-# ── Reserved slots (to be filled in later changes) ────────────────
-# get_current_user → C-03  (JWT verification, returns AuthenticatedUser)
-# require_permission → C-04 (RBAC: checks module:action against current user)
+async def get_tenant_from_jwt(
+    current_user: UserInfo = Depends(get_current_user),
+) -> UUID:
+    return current_user.tenant_id
