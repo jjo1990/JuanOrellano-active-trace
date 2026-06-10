@@ -75,12 +75,17 @@ class AuthService:
         if not allowed:
             raise RateLimitExceededError("Demasiados intentos de login. Intente de nuevo en 60 segundos.")
 
-        user = await self._user_repo.get_by_email(email, tenant_id)
+        user = await self._user_repo.get_by_email(email)
         if user is None:
             raise InvalidCredentialsError("Email o contraseña incorrectos.")
 
         if not verify_password(password, user.password_hash):
             raise InvalidCredentialsError("Email o contraseña incorrectos.")
+
+        if not user.activo:
+            raise InvalidCredentialsError(
+                "Usuario inactivo. Contacte al administrador.",
+            )
 
         await self._rate_limiter.reset(rate_key)
 
@@ -88,7 +93,6 @@ class AuthService:
             challenge = create_access_token(
                 user_id=user.id,
                 tenant_id=tenant_id,
-                roles=user.roles,
                 expires_delta=timedelta(minutes=5),
             )
             return LoginResult(requires_2fa=True, challenge_token=challenge)
@@ -96,7 +100,6 @@ class AuthService:
         access = create_access_token(
             user_id=user.id,
             tenant_id=tenant_id,
-            roles=user.roles,
         )
         refresh_raw = await self._emit_refresh_token(user.id, tenant_id)
         return LoginResult(access_token=access, refresh_token=refresh_raw)
@@ -125,7 +128,6 @@ class AuthService:
         access = create_access_token(
             user_id=user.id,
             tenant_id=tenant_id,
-            roles=user.roles,
         )
         refresh_raw = await self._emit_refresh_token(user.id, tenant_id)
         return LoginResult(access_token=access, refresh_token=refresh_raw)
@@ -162,7 +164,7 @@ class AuthService:
             await self._rt_repo.revoke(stored)
 
     async def forgot(self, email: str, tenant_id: uuid.UUID) -> None:
-        user = await self._user_repo.get_by_email(email, tenant_id)
+        user = await self._user_repo.get_by_email(email)
         if user is None:
             return
 

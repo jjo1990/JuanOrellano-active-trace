@@ -14,7 +14,7 @@ from app.repositories.user_repository import UserRepository
 class TestRefreshTokenRepository:
     async def _create_user(self, db_session: AsyncSession, tenant_id) -> User:
         repo = UserRepository(session=db_session, tenant_id=tenant_id)
-        user = User(email="test@test.com", password_hash="hash", display_name="Test")
+        user = User(email="test@test.com", password_hash="hash", nombre="Test", apellidos="")
         return await repo.create(user)
 
     def _hash_token(self, raw: str) -> str:

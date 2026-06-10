@@ -95,8 +95,9 @@ def verify_password(plain: str, hashed: str) -> bool:
 def create_access_token(
     user_id: uuid.UUID,
     tenant_id: uuid.UUID,
-    roles: list[str],
+    roles: list[str] | None = None,
     expires_delta: timedelta | None = None,
+    extra_claims: dict | None = None,
 ) -> str:
     settings = Settings()
     if expires_delta is None:
@@ -104,9 +105,12 @@ def create_access_token(
     payload: dict = {
         "sub": str(user_id),
         "tenant_id": str(tenant_id),
-        "roles": roles,
         "exp": datetime.now(timezone.utc) + expires_delta,
     }
+    if roles:
+        payload["roles"] = roles
+    if extra_claims:
+        payload.update(extra_claims)
     return _jwt.encode(payload, settings.secret_key, algorithm=settings.jwt_algorithm)
 
 

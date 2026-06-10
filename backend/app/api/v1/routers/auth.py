@@ -3,8 +3,15 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.dependencies import get_current_user, get_db, get_tenant_from_header
+from app.core.dependencies import (
+    get_current_user,
+    get_db,
+    get_tenant_from_header,
+    require_permission,
+    resolve_impersonation,
+)
 from app.core.rate_limiter import InMemoryRateLimiter
+from app.repositories.audit_log import AuditLogRepository
 from app.repositories.refresh_token_repository import RefreshTokenRepository
 from app.repositories.user_repository import UserRepository
 from app.schemas.auth import (
@@ -22,7 +29,9 @@ from app.schemas.auth import (
     TwoFactorVerifyRequest,
     UserInfo,
 )
+from app.services.audit import AuditService
 from app.services.auth_service import AuthService
+from app.services.impersonation import ImpersonationService
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
@@ -153,3 +162,52 @@ async def get_2fa_status(
     service = _build_service(db, tenant_id)
     enabled = await service.get_2fa_status(user.id)
     return TwoFactorStatusResponse(enabled=enabled)
+
+
+# ── Impersonation ───────────────────────────────────────────────────────
+
+
+def _build_impersonation_service(db: AsyncSession, tenant_id: UUID) -> ImpersonationService:
+    user_repo = UserRepository(db, tenant_id)
+    audit_repo = AuditLogRepository(db)
+    audit_service = AuditService(audit_repo)
+    return ImpersonationService(user_repo, audit_service)
+
+
+@router.post("/impersonate/stop")
+async def impersonate_stop(
+    request: Request,
+    _: None = Depends(resolve_impersonation),
+    user: UserInfo = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+    tenant_id: UUID = Depends(get_tenant_from_header),
+):
+    actor_id: UUID | None = request.state.actor_id
+    svc = _build_impersonation_service(db, tenant_id)
+    token = await svc.stop_impersonation(
+        current_user_id=user.id,
+        actor_id=actor_id,
+        tenant_id=tenant_id,
+        request=request,
+    )
+    await db.commit()
+    return {"access_token": token, "token_type": "bearer"}
+
+
+@router.post("/impersonate/{user_id}")
+async def impersonate_start(
+    user_id: UUID,
+    request: Request,
+    user: UserInfo = Depends(require_permission("impersonacion:usar")),
+    db: AsyncSession = Depends(get_db),
+    tenant_id: UUID = Depends(get_tenant_from_header),
+):
+    svc = _build_impersonation_service(db, tenant_id)
+    token = await svc.start_impersonation(
+        actor_user_id=user.id,
+        target_user_id=user_id,
+        tenant_id=tenant_id,
+        request=request,
+    )
+    await db.commit()
+    return {"access_token": token, "token_type": "bearer"}

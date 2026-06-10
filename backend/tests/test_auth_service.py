@@ -13,7 +13,7 @@ from app.core.rate_limiter import InMemoryRateLimiter
 class TestAuthService:
     async def _setup_user(self, db_session: AsyncSession, tenant_id, email="alice@test.com", password="pass123!") -> User:
         repo = UserRepository(session=db_session, tenant_id=tenant_id)
-        user = User(email=email, password_hash=hash_password(password), display_name="Alice")
+        user = User(email=email, password_hash=hash_password(password), nombre="Alice", apellidos="")
         created = await repo.create(user)
         await db_session.commit()
         return created
@@ -54,7 +54,7 @@ class TestAuthService:
         db_session.add(User(
             email="bob@test.com",
             password_hash=hash_password("pass123!"),
-            display_name="Bob",
+            nombre="Bob", apellidos="",
             tenant_id=tenant_a.id,
             totp_enabled=True,
             totp_secret="encrypted",

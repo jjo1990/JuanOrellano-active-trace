@@ -77,5 +77,9 @@ class UserInfo(BaseModel):
     id: uuid.UUID
     tenant_id: uuid.UUID
     email: str
-    display_name: str
-    roles: list[str]
+    nombre: str
+    apellidos: str
+
+    @property
+    def display_name(self) -> str:
+        return f"{self.nombre} {self.apellidos}"
