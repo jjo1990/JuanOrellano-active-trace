@@ -18,6 +18,8 @@ class Settings(BaseSettings):
     totp_issuer: str = Field(default="activia-trace")
     otel_service_name: str = "activia-trace"
     otel_exporter_otlp_endpoint: str | None = None
+    moodle_ws_timeout: int = 30
+    moodle_ws_max_retries: int = 3
 
     @field_validator("encryption_key")
     @classmethod

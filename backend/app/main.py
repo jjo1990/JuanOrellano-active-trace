@@ -3,11 +3,15 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
+from app.api.v1.routers.analisis import router as analisis_router
 from app.api.v1.routers.asignaciones import router as asignaciones_router
 from app.api.v1.routers.audit_log import router as audit_log_router
 from app.api.v1.routers.auth import router as auth_router
+from app.api.v1.routers.calificaciones import router as calificaciones_router
+from app.api.v1.routers.comunicaciones import router as comunicaciones_router
 from app.api.v1.routers.estructura import router as estructura_router
 from app.api.v1.routers.health import router as health_router
+from app.api.v1.routers.padron import router as padron_router
 from app.api.v1.routers.permisos import router as permisos_router
 from app.api.v1.routers.roles import router as roles_router
 from app.api.v1.routers.usuarios import router as usuarios_router
@@ -38,11 +42,15 @@ def create_app() -> FastAPI:
     app = FastAPI(title="activia-trace", version="0.1.0", lifespan=lifespan)
     for exc_type, handler in HANDLERS:
         app.add_exception_handler(exc_type, handler)
+    app.include_router(analisis_router)
     app.include_router(asignaciones_router)
     app.include_router(audit_log_router)
     app.include_router(auth_router)
+    app.include_router(calificaciones_router)
+    app.include_router(comunicaciones_router)
     app.include_router(estructura_router)
     app.include_router(health_router)
+    app.include_router(padron_router)
     app.include_router(permisos_router)
     app.include_router(roles_router)
     app.include_router(usuarios_router)
