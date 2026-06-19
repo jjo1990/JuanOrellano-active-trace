@@ -1,6 +1,7 @@
 import uuid
 from collections.abc import Sequence
 
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.carrera import Carrera
@@ -71,3 +72,16 @@ class EstructuraRepository:
 
     async def soft_delete_materia(self, id: uuid.UUID) -> None:
         await self._materia_repo.soft_delete(id)
+
+    async def list_materias_by_grupo_plus(self, grupo: str) -> Sequence[Materia]:
+        stmt = (
+            select(Materia)
+            .where(
+                Materia.tenant_id == self._materia_repo._tenant_id,
+                Materia.deleted_at.is_(None),
+                Materia.grupo_plus == grupo,
+            )
+            .order_by(Materia.created_at)
+        )
+        result = await self._session.execute(stmt)
+        return result.scalars().all()

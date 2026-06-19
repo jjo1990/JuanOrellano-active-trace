@@ -3,7 +3,7 @@ from datetime import date
 
 import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import JSONB, UUID
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
 from app.models.mixins import BaseModelMixin
@@ -41,3 +41,9 @@ class Asignacion(BaseModelMixin, Base):
     )
     desde: Mapped[date] = mapped_column(sa.Date, nullable=False)
     hasta: Mapped[date | None] = mapped_column(sa.Date, nullable=True)
+
+    usuario = relationship("User", lazy="selectin", foreign_keys=[usuario_id])
+    rol = relationship("Rol", lazy="selectin", foreign_keys=[rol_id])
+    materia = relationship("Materia", lazy="selectin", foreign_keys=[materia_id])
+    carrera = relationship("Carrera", lazy="selectin", foreign_keys=[carrera_id])
+    cohorte = relationship("Cohorte", lazy="selectin", foreign_keys=[cohorte_id])

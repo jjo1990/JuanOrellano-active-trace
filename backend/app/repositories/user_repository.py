@@ -1,8 +1,10 @@
 import uuid
 from typing import Sequence
 
-from sqlalchemy import or_, select
+from sqlalchemy import distinct, or_, select
 
+from app.models.asignacion import Asignacion
+from app.models.rol import Rol
 from app.models.user import User
 from app.repositories.base import Repository
 
@@ -23,7 +25,14 @@ class UserRepository(Repository[User]):
     async def list_by_tenant(self) -> Sequence[User]:
         return await self.list()
 
-    async def search_by_name(self, query: str) -> Sequence[User]:
+    async def search_by_name(
+        self,
+        query: str,
+        limite: int = 20,
+        roles: list[str] | None = None,
+    ) -> Sequence[User]:
+        if not query.strip():
+            return []
         pattern = f"%{query}%"
         stmt = (
             select(User)
@@ -33,10 +42,24 @@ class UserRepository(Repository[User]):
                 or_(
                     User.nombre.ilike(pattern),
                     User.apellidos.ilike(pattern),
+                    User.legajo.ilike(pattern),
                 ),
             )
-            .order_by(User.created_at)
+            .order_by(User.apellidos, User.nombre)
+            .limit(limite)
         )
+        if roles:
+            stmt = stmt.where(
+                User.id.in_(
+                    select(distinct(Asignacion.usuario_id))
+                    .join(Rol, Asignacion.rol_id == Rol.id)
+                    .where(
+                        Rol.nombre.in_(roles),
+                        Asignacion.tenant_id == self._tenant_id,
+                        Asignacion.deleted_at.is_(None),
+                    )
+                )
+            )
         result = await self._session.execute(stmt)
         return result.scalars().all()
 

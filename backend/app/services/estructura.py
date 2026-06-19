@@ -145,7 +145,10 @@ class EstructuraService:
     # ── Materia ───────────────────────────────────────────────────────────
 
     async def create_materia(self, data: MateriaCreate) -> Materia:
-        entity = Materia(codigo=data.codigo, nombre=data.nombre, activa=data.activa)
+        entity = Materia(
+            codigo=data.codigo, nombre=data.nombre, activa=data.activa,
+            grupo_plus=data.grupo_plus,
+        )
         result = await self._run(self._repo.create_materia(entity))
         await self._commit()
         await self._session.refresh(result)

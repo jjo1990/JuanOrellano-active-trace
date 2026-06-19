@@ -76,6 +76,7 @@ class MateriaCreate(BaseModel):
     model_config = ConfigDict(extra="forbid")
     codigo: str
     nombre: str
+    grupo_plus: str | None = None
     activa: bool = True
 
 
@@ -83,6 +84,7 @@ class MateriaUpdate(BaseModel):
     model_config = ConfigDict(extra="forbid")
     codigo: str | None = None
     nombre: str | None = None
+    grupo_plus: str | None = None
     activa: bool | None = None
 
 
@@ -92,6 +94,7 @@ class MateriaResponse(BaseModel):
     tenant_id: uuid.UUID | None = None
     codigo: str
     nombre: str
+    grupo_plus: str | None = None
     activa: bool
     created_at: datetime | None = None
     updated_at: datetime | None = None

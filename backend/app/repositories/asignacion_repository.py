@@ -2,7 +2,8 @@ import uuid
 from datetime import date
 from typing import Sequence
 
-from sqlalchemy import select
+from sqlalchemy import func, select, update as sa_update
+from sqlalchemy.orm import selectinload
 
 from app.models.asignacion import Asignacion
 from app.repositories.base import Repository
@@ -69,5 +70,121 @@ class AsignacionRepository(Repository[Asignacion]):
             stmt = stmt.where(
                 (Asignacion.hasta.isnot(None)) & (Asignacion.hasta < hoy),
             )
+        result = await self._session.execute(stmt)
+        return result.scalars().all()
+
+    async def list_with_joins(
+        self,
+        usuario_id: uuid.UUID | None = None,
+        materia_id: uuid.UUID | None = None,
+        rol_id: uuid.UUID | None = None,
+        carrera_id: uuid.UUID | None = None,
+        cohorte_id: uuid.UUID | None = None,
+        vigente: bool | None = None,
+    ) -> Sequence[Asignacion]:
+        stmt = (
+            select(Asignacion)
+            .where(
+                Asignacion.tenant_id == self._tenant_id,
+                Asignacion.deleted_at.is_(None),
+            )
+            .options(
+                selectinload(Asignacion.usuario),
+                selectinload(Asignacion.rol),
+                selectinload(Asignacion.materia),
+                selectinload(Asignacion.carrera),
+                selectinload(Asignacion.cohorte),
+            )
+            .order_by(Asignacion.created_at)
+        )
+        if usuario_id is not None:
+            stmt = stmt.where(Asignacion.usuario_id == usuario_id)
+        if materia_id is not None:
+            stmt = stmt.where(Asignacion.materia_id == materia_id)
+        if rol_id is not None:
+            stmt = stmt.where(Asignacion.rol_id == rol_id)
+        if carrera_id is not None:
+            stmt = stmt.where(Asignacion.carrera_id == carrera_id)
+        if cohorte_id is not None:
+            stmt = stmt.where(Asignacion.cohorte_id == cohorte_id)
+        if vigente is True:
+            hoy = date.today()
+            stmt = stmt.where(
+                Asignacion.desde <= hoy,
+                (Asignacion.hasta.is_(None)) | (Asignacion.hasta >= hoy),
+            )
+        elif vigente is False:
+            hoy = date.today()
+            stmt = stmt.where(
+                (Asignacion.hasta.isnot(None)) & (Asignacion.hasta < hoy),
+            )
+        result = await self._session.execute(stmt)
+        return result.scalars().all()
+
+    async def bulk_create(self, entities: list[Asignacion]) -> list[Asignacion]:
+        if not entities:
+            return []
+        for entity in entities:
+            entity.tenant_id = self._tenant_id
+            self._session.add(entity)
+        await self._session.flush()
+        for entity in entities:
+            await self._session.refresh(entity)
+        return entities
+
+    async def bulk_update_vigencia(
+        self,
+        materia_id: uuid.UUID | None = None,
+        carrera_id: uuid.UUID | None = None,
+        cohorte_id: uuid.UUID | None = None,
+        desde: date | None = None,
+        hasta: date | None = None,
+    ) -> int:
+        values = {}
+        if desde is not None:
+            values["desde"] = desde
+        if hasta is not None:
+            values["hasta"] = hasta
+        if not values:
+            return 0
+
+        stmt = (
+            sa_update(Asignacion)
+            .where(
+                Asignacion.tenant_id == self._tenant_id,
+                Asignacion.deleted_at.is_(None),
+            )
+            .values(**values)
+        )
+        if materia_id is not None:
+            stmt = stmt.where(Asignacion.materia_id == materia_id)
+        if carrera_id is not None:
+            stmt = stmt.where(Asignacion.carrera_id == carrera_id)
+        if cohorte_id is not None:
+            stmt = stmt.where(Asignacion.cohorte_id == cohorte_id)
+        result = await self._session.execute(stmt)
+        await self._session.flush()
+        return result.rowcount
+
+    async def list_by_equipo(
+        self,
+        materia_id: uuid.UUID | None = None,
+        carrera_id: uuid.UUID | None = None,
+        cohorte_id: uuid.UUID | None = None,
+    ) -> Sequence[Asignacion]:
+        stmt = (
+            select(Asignacion)
+            .where(
+                Asignacion.tenant_id == self._tenant_id,
+                Asignacion.deleted_at.is_(None),
+            )
+            .order_by(Asignacion.created_at)
+        )
+        if materia_id is not None:
+            stmt = stmt.where(Asignacion.materia_id == materia_id)
+        if carrera_id is not None:
+            stmt = stmt.where(Asignacion.carrera_id == carrera_id)
+        if cohorte_id is not None:
+            stmt = stmt.where(Asignacion.cohorte_id == cohorte_id)
         result = await self._session.execute(stmt)
         return result.scalars().all()
